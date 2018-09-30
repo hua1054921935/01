@@ -701,3 +701,197 @@ class TopoConfig:
                 node[3] += 100
             elif node[1] == "router":
                 node[3] += 800
+
+
+def update_topo(static_xml):
+    import heapq
+    dict1={'firewall':20,'host':4,'router':16,'server':4,'switch':8,'ids':8,'ips':8}
+    temp = ['firewall', 'host', 'ids', 'ips', 'router', 'server', 'switch']
+    list1=[]
+    for name in temp:
+        for item in static_xml[name]:
+            item[3] = dict1[name]
+
+            # tmp['site'][0] = item[2] / 800
+            # tmp['site'][1] = item[4] / 800
+            # tmp['site'][2] = item[3] / 800
+
+        # data[item[0]] = tmp
+
+def create_topo_three(view):
+    if view['rea_value'] == 0 and view['emu_value'] == 0 and view['sim_value'] == 0 and view['mms_value'] == 0:
+        view['rea_value'] = 250
+        view['emu_value'] = 250
+        view['sim_value'] = 250
+        view['mms_value'] = 250
+
+    node = view['rea_value'] + view['emu_value'] + view['sim_value'] + view['mms_value']
+    if int(math.sqrt(node / 4)) % 2 == 0:
+        n = int(math.sqrt(node / 4))
+    else:
+        n = int(math.sqrt(node / 4)) + 1
+    pos = [[1, 1], [-1, 1], [-1, -1], [1, -1]]
+    r = 4
+    d = 1
+    count = 0
+    node_id = 1
+    nodes_list2 = []
+    dict1 = {}
+
+    for k in xrange(1, n):
+        y = r * k
+        if k == 1:
+            for i in xrange(1, n):
+                for j in xrange(1, n - i):
+                    for s in xrange(len(pos)):
+                        if i == n - 1 or j == n - 1:
+                            continue
+                        # if i == (n - 1)/2 or j == (n - 1)/2 or i == n/2 or j == n/2:
+                        #     continue
+                        nodes_dict = {}
+                        nodes_dict['site'] = [i * pos[s][0], y, j * pos[s][1]]
+                        nodes_dict['node_category'] = ''
+                        nodes_dict['node_type'] = 's'
+                        nodes_dict['line'] = []
+                        dict1[node_id] = nodes_dict
+                        nodes_list2.append([i * pos[s][0], y, j * pos[s][1]])
+                        count += 1
+                        node_id += 1
+
+        else:
+            for i in xrange(1, n):
+                for j in xrange(1, n - i + 1):
+                    for s in xrange(len(pos)):
+                        nodes_list2.append([pos[s][0] * (d * (i - 0.5) + 0.5), y,
+                                            (d * (j - 0.5) + 0.5) * pos[s][1]])
+                        nodes_dict = {}
+                        nodes_dict['site'] = [pos[s][0] * (d * (i - 0.5) + 0.5), y,
+                                              (d * (j - 0.5) + 0.5) * pos[s][1]]
+
+                        if y <= 8:
+                            q = [pos[s][0] * (d * (i - 0.5) + 0.5) - 0.5 * pos[s][0], y - 4,
+                                 (d * (j - 0.5) + 0.5) * pos[s][1] - 0.5 * pos[s][0]]
+                            w = [pos[s][0] * (d * (i - 0.5) + 0.5) - 0.5 * pos[s][0], y - 4,
+                                 (d * (j - 0.5) + 0.5) * pos[s][1] + 0.5 * pos[s][0]]
+                            e = [pos[s][0] * (d * (i - 0.5) + 0.5) + 0.5 * pos[s][0], y - 4,
+                                 (d * (j - 0.5) + 0.5) * pos[s][1] - 0.5 * pos[s][0]]
+                            v = [pos[s][0] * (d * (i - 0.5) + 0.5) + 0.5 * pos[s][0], y - 4,
+                                 (d * (j - 0.5) + 0.5) * pos[s][1] + 0.5 * pos[s][0]]
+                        else:
+                            q = [pos[s][0] * (d * (i - 0.5) + 0.5) - d / 4 * pos[s][0], y - 4,
+                                 (d * (j - 0.5) + 0.5) * pos[s][1] - d / 4 * pos[s][0]]
+                            w = [pos[s][0] * (d * (i - 0.5) + 0.5) - d / 4 * pos[s][0], y - 4,
+                                 (d * (j - 0.5) + 0.5) * pos[s][1] + d / 4 * pos[s][0]]
+                            e = [pos[s][0] * (d * (i - 0.5) + 0.5) + d / 4 * pos[s][0], y - 4,
+                                 (d * (j - 0.5) + 0.5) * pos[s][1] - d / 4 * pos[s][0]]
+                            v = [pos[s][0] * (d * (i - 0.5) + 0.5) + d / 4 * pos[s][0], y - 4,
+                                 (d * (j - 0.5) + 0.5) * pos[s][1] + d / 4 * pos[s][0]]
+                        list_line = []
+
+                        try:
+                            a = nodes_list2.index(q)
+                            list_line.append(a + 1)
+                            if y - 4 == 4:
+                                dict1[a + 1]['line'] = [node_id]
+                            else:
+                                dict1[a + 1]['line'].append(node_id)
+                        except Exception as p:
+                            pass
+                        try:
+                            ss = nodes_list2.index(w)
+                            list_line.append(ss + 1)
+                            if y - 4 == 4:
+                                dict1[ss + 1]['line'] = [node_id]
+                            else:
+                                dict1[ss + 1]['line'].append(node_id)
+                        except Exception as p:
+                            pass
+                        try:
+                            f = nodes_list2.index(e)
+                            list_line.append(f + 1)
+                            if y - 4 == 4:
+                                dict1[f + 1]['line'] = [node_id]
+                            else:
+                                dict1[f + 1]['line'].append(node_id)
+                        except Exception as p:
+                            pass
+                        try:
+                            m = nodes_list2.index(v)
+                            list_line.append(m + 1)
+                            if y - 4 == 4:
+                                dict1[m + 1]['line'] = [node_id]
+                            else:
+                                dict1[m + 1]['line'].append(node_id)
+                        except Exception as p:
+                            pass
+
+                        if len(list_line) >= 4:
+                            if s == 0:
+                                list_line.pop(3)
+                            if s == 1:
+                                list_line.pop(2)
+                            if s == 2:
+                                list_line.pop(0)
+                            if s == 3:
+                                list_line.pop(1)
+                            dict1[list_line[0]]['line'] = [node_id]
+                            dict1[list_line[1]]['line'] = [node_id]
+                            dict1[list_line[2]]['line'] = [node_id]
+                        nodes_dict['line'] = list_line
+                        nodes_dict['node_category'] = ''
+                        nodes_dict['node_type'] = 's'
+                        dict1[node_id] = nodes_dict
+                        count += 1
+                        node_id += 1
+
+        if n <= 4:
+            n = int(n - 1)
+        else:
+            n = int(n * 0.5)
+        d = d * 2
+
+    nodes_dict = {}
+    nodes_dict['site'] = [0, nodes_list2[len(nodes_list2) - 1][1] + 4, 0]
+    nodes_dict['node_category'] = ''
+    nodes_dict['node_discription'] = ''
+    nodes_dict['node_type'] = 's'
+    nodes_dict['line'] = [len(nodes_list2), len(nodes_list2) - 1, len(nodes_list2) - 2, len(nodes_list2) - 3]
+    dict1[len(nodes_list2)]['line'].append(len(nodes_list2) + 1)
+    dict1[len(nodes_list2) - 1]['line'].append(len(nodes_list2) + 1)
+    dict1[len(nodes_list2) - 2]['line'].append(len(nodes_list2) + 1)
+    dict1[len(nodes_list2) - 3]['line'].append(len(nodes_list2) + 1)
+    dict1[len(nodes_list2) + 1] = nodes_dict
+    list_flag = []
+    for sites in dict1:
+        if dict1[sites]['site'][1] > 4:
+            list_flag.append(sites)
+    if list_flag:
+        flag = 0
+        for site in dict1:
+            if len(dict1[site]['line']) == 0:
+                if flag < len(list_flag):
+                    dict1[site]['line'].append(list_flag[flag])
+                    dict1[list_flag[flag]]['line'].append(site)
+                    flag += 1
+                else:
+                    flag = 0
+                    dict1[site]['line'].append(list_flag[flag])
+                    dict1[list_flag[flag]]['line'].append(site)
+                    continue
+
+
+    for index in dict1:
+        if dict1[index]['node_category'] == "" and int(index) <= view['mms_value']:
+            dict1[index]['node_category'] = 'mms'
+        if dict1[index]['node_category'] == "" and view['mms_value'] < int(index) <= view['mms_value'] + view[
+            'sim_value']:
+            dict1[index]['node_category'] = 'sim'
+        if dict1[index]['node_category'] == "" and view['mms_value'] + view['sim_value'] < int(index) <= view[
+            'mms_value'] + \
+                view['sim_value'] + view['emu_value']:
+            dict1[index]['node_category'] = 'emu'
+        if dict1[index]['node_category'] == "" and view['mms_value'] + view['sim_value'] + view['emu_value'] < int(
+                index):
+            dict1[index]['node_category'] = 'rea'
+
+    return dict1
